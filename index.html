@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-colxor" content="#03001c" />
+  <meta name="description" content="PAC-MAN PARALLAX — an interactive neon arcade scroll experience." />
+  <title>PAC-MAN PARALLAX // Enter the Maze</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --navy: #03001c;
+      --navy-2: #05042c;
+      --blue: #1919a6;
+      --blue-bright: #3434ff;
+      --yellow: #ffff00;
+      --yellow-soft: #ffe94a;
+      --red: #ff0000;
+      --pink: #ffb8ff;
+      --cyan: #00ffff;
+      --orange: #ffb852;
+      --white: #f4f4ff;
+      --muted: #8b8ab4;
+      --line: rgba(25, 25, 166, 0.46);
+      --card: rgba(5, 4, 44, 0.78);
+      --progress: 0;
+      --header-height: 74px;
+    }
+
+    * { box-sizing: border-box; }
+    html {
+      scroll-behavior: smooth;
+      scroll-snap-type: y proximity;
+      background: var(--navy);
+    }
+    body {
+      min-width: 320px;
+      margin: 0;
+      overflow-x: hidden;
+      color: var(--white);
+      background: var(--navy);
+      font-family: "VT323", "Courier New", monospace;
+      font-size: 20px;
+      letter-spacing: 0.02em;
+    }
+    body::before,
+    body::after {
+      position: fixed;
+      z-index: -4;
+      inset: 0;
+      pointer-events: none;
+      content: "";
+    }
+    body::before {
+      opacity: 0.5;
+      background-image:
+        linear-gradient(rgba(25, 25, 166, 0.16) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(25, 25, 166, 0.16) 1px, transparent 1px);
+      background-size: 52px 52px;
+      transform: perspective(500px) rotateX(54deg) scale(2.2) translateY(20%);
+      transform-origin: center bottom;
+      mask-image: linear-gradient(to top, black, transparent 76%);
+    }
+    body::after {
+      z-index: -3;
+      opacity: 0.32;
+      background:
+        radial-gradient(circle at 14% 24%, rgba(0, 255, 255, 0.16) 0 1px, transparent 2px),
+        radial-gradient(circle at 74% 36%, rgba(255, 255, 0, 0.25) 0 1px, transparent 2px),
+        radial-gradient(circle at 42% 78%, rgba(255, 184, 255, 0.17) 0 1px, transparent 2px);
+      background-size: 270px 220px, 340px 270px, 410px 310px;
+      animation: drift-stars 20s linear infinite;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; }
+    button:focus-visible, a:focus-visible { outline: 2px solid var(--yellow); outline-offset: 4px; }
+
+    .scanlines {
+      position: fixed;
+      z-index: 10;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.08;
+      background: repeating-linear-gradient(to bottom, transparent 0 3px, #fff 4px, transparent 5px);
+      mix-blend-mode: overlay;
+    }
+    .site-header {
+      position: fixed;
+      z-index: 20;
+      top: 0;
+      right: 0;
+      left: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: var(--header-height);
+      padding: 0 clamp(18px, 4vw, 64px);
+      border-bottom: 1px solid rgba(25, 25, 166, 0.72);
+      background: rgba(3, 0, 28, 0.8);
+      backdrop-filter: blur(16px);
+    }
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 11px;
+      color: var(--yellow);
+      font: 11px/1 "Press Start 2P", monospace;
+      letter-spacing: -0.08em;
+      text-shadow: 0 0 12px rgba(255, 255, 0, 0.7);
+    }
+    .brand-mark {
+      display: inline-grid;
+      place-items: center;
+      width: 28px;
+      height: 28px;
+      overflow: hidden;
+      border-radius: 50%;
+      color: var(--navy);
+      background: var(--yellow);
+      font-size: 18px;
+      line-height: 1;
+      text-shadow: none;
+      transform: rotate(-10deg);
+    }
+    .brand small {
+      color: var(--white);
+      font-size: 8px;
+      opacity: 0.7;
+    }
+    .header-nav {
+      display: flex;
+      align-items: center;
+      gap: clamp(14px, 2.5vw, 36px);
+      margin-left: auto;
+      margin-right: clamp(18px, 3vw, 42px);
+      color: var(--muted);
+      font-size: 17px;
+    }
+    .header-nav a { transition: color 180ms ease, text-shadow 180ms ease; }
+    .header-nav a:hover { color: var(--yellow); text-shadow: 0 0 10px var(--yellow); }
+    .header-actions { display: flex; align-items: center; gap: 10px; }
+    .hud-score {
+      display: grid;
+      gap: 2px;
+      color: var(--muted);
+      font-size: 14px;
+      text-align: right;
+      line-height: 0.9;
+    }
+    .hud-score strong {
+      color: var(--yellow);
+      font-size: 17px;
+      font-weight: 400;
+      letter-spacing: 0.05em;
+    }
+    .icon-btn, .coin-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 38px;
+      border: 1px solid rgba(25, 25, 166, 0.9);
+      color: var(--white);
+      background: rgba(25, 25, 166, 0.18);
+      cursor: pointer;
+      transition: border-color 180ms ease, background 180ms ease, color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+    }
+    .icon-btn { width: 40px; font-size: 20px; }
+    .icon-btn:hover, .icon-btn.is-on { border-color: var(--yellow); color: var(--yellow); box-shadow: 0 0 18px rgba(255, 255, 0, 0.25); }
+    .coin-btn {
+      padding: 0 13px;
+      color: var(--yellow);
+      font: 9px "Press Start 2P", monospace;
+    }
+    .coin-btn:hover { border-color: var(--yellow); background: rgba(255, 255, 0, 0.11); box-shadow: 0 0 22px rgba(255, 255, 0, 0.3); transform: translateY(-2px); }
+
+    .track-layer {
+      position: fixed;
+      z-index: 5;
+      top: calc(var(--header-height) + 14px);
+      bottom: 20px;
+      left: 50%;
+      width: 156px;
+      pointer-events: none;
+      transform: translateX(-50%);
+    }
+    .track-rail {
+      position: absolute;
+      top: 8%;
+      bottom: 8%;
+      left: 50%;
+      width: 2px;
+      background: linear-gradient(to bottom, transparent, var(--blue-bright) 8%, var(--blue-bright) 92%, transparent);
+      box-shadow: 0 0 12px rgba(52, 52, 255, 0.7);
+    }
+    .track-rail::before, .track-rail::after {
+      position: absolute;
+      left: 50%;
+      width: 24px;
+      height: 24px;
+      content: "";
+      border: 2px solid var(--blue-bright);
+      border-radius: 50%;
+      box-shadow: 0 0 16px rgba(52, 52, 255, 0.55);
+      transform: translateX(-50%);
+    }
+    .track-rail::before { top: -13px; }
+    .track-rail::after { bottom: -13px; }
+    .track-label {
+      position: absolute;
+      top: 4%;
+      left: 50%;
+      color: var(--blue-bright);
+      font: 7px "Press Start 2P", monospace;
+      letter-spacing: 0;
+      white-space: nowrap;
+      opacity: 0.85;
+      transform: translate(-50%, -100%) rotate(-90deg) translateX(-12px);
+      transform-origin: center;
+    }
+    .pellet-field { position: absolute; inset: 0; }
+    .pellet {
+      position: absolute;
+      left: 50%;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--yellow);
+      box-shadow: 0 0 9px var(--yellow);
+      transform: translateX(-50%);
+      transition: opacity 350ms ease, transform 350ms ease;
+    }
+    .pellet.power {
+      width: 17px;
+      height: 17px;
+      border: 2px solid var(--yellow);
+      background: transparent;
+      box-shadow: 0 0 16px var(--yellow), inset 0 0 8px var(--yellow);
+      animation: power-pulse 1.1s ease-in-out infinite;
+    }
+    .pellet.eaten { opacity: 0; transform: translateX(-50%) scale(0); }
+    .pacman-runner {
+      position: absolute;
+      top: 8%;
+      left: 50%;
+      z-index: 2;
+      width: 112px;
+      height: 112px;
+      transition: top 120ms linear;
+      transform: translate(-50%, -50%);
+      filter: drop-shadow(0 0 9px rgba(255, 255, 0, 1)) drop-shadow(0 0 24px rgba(255, 255, 0, 0.8)) drop-shadow(0 0 48px rgba(255, 208, 0, 0.5));
+    }
+    .pacman-runner::before {
+      position: absolute;
+      z-index: -1;
+      inset: -12px;
+      content: "";
+      border: 1px solid rgba(255, 255, 0, 0.24);
+      border-radius: 50%;
+      box-shadow: 0 0 28px rgba(255, 255, 0, 0.55), inset 0 0 20px rgba(255, 255, 0, 0.18);
+      animation: pacman-aura 1.1s ease-in-out infinite;
+    }
+    .pacman-face {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      border: 2px solid rgba(255, 255, 180, 0.7);
+      border-radius: 50%;
+      background: radial-gradient(circle at 34% 30%, #ffffcf 0 4%, var(--yellow) 24%, #ffd000 100%);
+      animation: pacman-chomp 230ms steps(2, end) infinite;
+    }
+    .pacman-face::before {
+      position: absolute;
+      top: 17px;
+      right: 25px;
+      width: 10px;
+      height: 10px;
+      content: "";
+      border-radius: 50%;
+      background: var(--navy);
+      box-shadow: 0 0 5px rgba(3, 0, 28, 0.65);
+    }
+    .pacman-face::after {
+      position: absolute;
+      top: 50%;
+      right: -4px;
+      width: 78px;
+      height: 78px;
+      content: "";
+      background: var(--navy);
+      clip-path: polygon(100% 0, 0 50%, 100% 100%);
+      transform: translateY(-50%);
+    }
+    .ghost-float {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      border-radius: 50% 50% 5px 5px;
+      opacity: 0.62;
+      filter: drop-shadow(0 0 8px currentColor);
+      transition: transform 120ms linear;
+    }
+    .ghost-float::before {
+      position: absolute;
+      right: 4px;
+      bottom: -2px;
+      left: 4px;
+      height: 7px;
+      content: "";
+      background: inherit;
+      clip-path: polygon(0 0, 22% 100%, 50% 0, 78% 100%, 100% 0, 100% 100%, 0 100%);
+    }
+    .ghost-float::after {
+      position: absolute;
+      top: 8px;
+      left: 5px;
+      width: 14px;
+      height: 5px;
+      content: "••";
+      color: var(--navy);
+      font: 8px/4px Arial, sans-serif;
+      letter-spacing: 3px;
+    }
+    .ghost-float.red { top: 22%; right: 0; color: var(--red); background: var(--red); }
+    .ghost-float.pink { top: 41%; left: 0; color: var(--pink); background: var(--pink); }
+    .ghost-float.cyan { top: 64%; right: 0; color: var(--cyan); background: var(--cyan); }
+    .ghost-float.orange { top: 82%; left: 0; color: var(--orange); background: var(--orange); }
+
+    main { position: relative; z-index: 2; }
+    .hero, .level-section { scroll-snap-align: start; }
+    .hero {
+      position: relative;
+      display: grid;
+      place-items: center;
+      min-height: 100svh;
+      padding: calc(var(--header-height) + 70px) 24px 90px;
+      text-align: center;
+    }
+    .hero::after {
+      position: absolute;
+      right: 10%;
+      bottom: 4%;
+      left: 10%;
+      height: 1px;
+      content: "";
+      background: linear-gradient(to right, transparent, var(--blue-bright), transparent);
+      box-shadow: 0 0 15px var(--blue-bright);
+    }
+    .hero-content { max-width: 1050px; }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 11px;
+      color: var(--cyan);
+      font: 10px "Press Start 2P", monospace;
+      letter-spacing: 0.08em;
+    }
+    .eyebrow::before, .eyebrow::after { width: 32px; height: 1px; content: ""; background: currentColor; box-shadow: 0 0 7px currentColor; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 {
+      margin: 33px 0 22px;
+      color: var(--yellow);
+      font: clamp(34px, 7vw, 88px)/1.08 "Press Start 2P", monospace;
+      letter-spacing: -0.1em;
+      text-shadow: 4px 4px 0 #c89e00, 0 0 9px var(--yellow), 0 0 26px rgba(255, 255, 0, 0.78);
+      animation: title-flicker 5s infinite;
+    }
+    .hero-subtitle {
+      margin: 0 auto 40px;
+      color: var(--white);
+      font-size: clamp(25px, 3vw, 38px);
+      letter-spacing: 0.07em;
+    }
+    .hero-subtitle span { color: var(--pink); text-shadow: 0 0 10px var(--pink); }
+    .hero-actions { display: flex; justify-content: center; gap: 16px; flex-wrap: wrap; }
+    .arcade-btn {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 180px;
+      min-height: 52px;
+      padding: 0 24px;
+      border: 1px solid var(--yellow);
+      color: var(--navy);
+      background: var(--yellow);
+      box-shadow: 5px 5px 0 rgba(255, 184, 0, 0.4), 0 0 24px rgba(255, 255, 0, 0.28);
+      cursor: pointer;
+      font: 11px "Press Start 2P", monospace;
+      transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+    }
+    .arcade-btn::before { position: absolute; inset: 4px; border: 1px solid rgba(3, 0, 28, 0.38); content: ""; pointer-events: none; }
+    .arcade-btn:hover { background: var(--white); box-shadow: 7px 7px 0 rgba(255, 184, 0, 0.5), 0 0 32px rgba(255, 255, 0, 0.55); transform: translate(-2px, -2px); }
+    .arcade-btn.secondary { border-color: var(--cyan); color: var(--cyan); background: transparent; box-shadow: 5px 5px 0 rgba(0, 255, 255, 0.18), 0 0 20px rgba(0, 255, 255, 0.15); }
+    .arcade-btn.secondary:hover { color: var(--navy); background: var(--cyan); box-shadow: 7px 7px 0 rgba(0, 255, 255, 0.3), 0 0 30px rgba(0, 255, 255, 0.5); }
+    .hero-readout {
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      margin-top: 62px;
+      color: var(--muted);
+      font-size: 18px;
+    }
+    .hero-readout strong { display: block; margin-bottom: 5px; color: var(--yellow); font-size: 27px; font-weight: 400; }
+    .scroll-cue {
+      position: absolute;
+      bottom: 28px;
+      display: grid;
+      justify-items: center;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 15px;
+      animation: cue-float 1.7s ease-in-out infinite;
+    }
+    .scroll-cue i { display: block; width: 12px; height: 18px; border: 1px solid var(--yellow); border-radius: 9px; }
+    .scroll-cue i::after { display: block; width: 2px; height: 4px; margin: 4px auto; content: ""; background: var(--yellow); }
+
+    .level-section {
+      position: relative;
+      max-width: 1440px;
+      min-height: 100svh;
+      margin: 0 auto;
+      padding: 120px clamp(22px, 6vw, 90px) 160px;
+    }
+    .level-section::before {
+      position: absolute;
+      top: 18px;
+      right: 4%;
+      left: 4%;
+      height: 1px;
+      content: "";
+      background: linear-gradient(to right, transparent, var(--line), transparent);
+    }
+    .level-intro {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      margin-bottom: clamp(32px, 5vw, 72px);
+    }
+    .level-kicker { display: block; margin-bottom: 16px; color: var(--yellow); font: 10px "Press Start 2P", monospace; letter-spacing: 0.02em; }
+    .level-title { margin: 0; color: var(--white); font: clamp(24px, 4vw, 46px)/1.15 "Press Start 2P", monospace; letter-spacing: -0.08em; text-shadow: 0 0 15px rgba(255,255,255,.18); }
+    .level-title em { color: var(--yellow); font-style: normal; }
+    .level-coords { color: var(--muted); font-size: 16px; text-align: right; }
+    .level-coords b { color: var(--cyan); font-weight: 400; }
+    .level-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: clamp(34px, 12vw, 190px);
+      align-items: start;
+    }
+    .parallax-card { --parallax-y: 0px; transform: translateY(var(--parallax-y)); }
+    .arcade-card {
+      position: relative;
+      padding: clamp(24px, 3vw, 43px);
+      border: 1px solid var(--line);
+      background: linear-gradient(135deg, rgba(25, 25, 166, 0.17), rgba(5, 4, 44, 0.7) 38%, rgba(3, 0, 28, 0.82));
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.22), inset 0 0 30px rgba(25, 25, 166, 0.08);
+      transition: border-color 220ms ease, box-shadow 220ms ease, background 220ms ease;
+    }
+    .arcade-card::before, .arcade-card::after { position: absolute; width: 16px; height: 16px; content: ""; border-color: var(--yellow); border-style: solid; opacity: 0.8; transition: width 220ms ease, height 220ms ease; }
+    .arcade-card::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+    .arcade-card::after { right: -1px; bottom: -1px; border-width: 0 2px 2px 0; }
+    .arcade-card:hover { border-color: var(--blue-bright); background: linear-gradient(135deg, rgba(25,25,166,.26), rgba(5,4,44,.88)); box-shadow: 0 22px 70px rgba(0,0,0,.3), 0 0 26px rgba(25,25,166,.22), inset 0 0 30px rgba(25,25,166,.12); }
+    .arcade-card:hover::before, .arcade-card:hover::after { width: 27px; height: 27px; }
+    .card-index { display: flex; justify-content: space-between; margin-bottom: 30px; color: var(--cyan); font: 9px "Press Start 2P", monospace; }
+    .card-index b { color: var(--yellow); font-weight: 400; }
+    .card-title { margin: 0 0 17px; color: var(--white); font: clamp(19px, 2.3vw, 27px)/1.25 "Press Start 2P", monospace; letter-spacing: -0.08em; }
+    .card-title .accent { color: var(--yellow); }
+    .card-copy { max-width: 56ch; margin-bottom: 0; color: #c0bfdc; font-size: 21px; line-height: 1.18; }
+    .card-copy strong { color: var(--yellow); font-weight: 400; }
+    .quote-line { margin: 25px 0 0; padding-left: 16px; border-left: 2px solid var(--pink); color: var(--pink); font-size: 22px; line-height: 1.1; }
+    .timeline { display: grid; gap: 19px; margin-top: 31px; }
+    .timeline-row { display: grid; grid-template-columns: 74px 1fr; gap: 13px; align-items: start; }
+    .timeline-year { color: var(--yellow); font-size: 20px; }
+    .timeline-row p { margin: 0; color: var(--muted); font-size: 18px; line-height: 1.05; }
+    .card-footer { display: flex; justify-content: space-between; gap: 15px; align-items: center; margin-top: 34px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 16px; }
+    .card-footer b { color: var(--cyan); font-weight: 400; }
+
+    .ghost-card-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .ghost-card {
+      position: relative;
+      min-height: 182px;
+      padding: 20px 17px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      color: var(--white);
+      background: rgba(3, 0, 28, 0.68);
+      cursor: pointer;
+      text-align: left;
+      transition: border-color 180ms ease, background 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+    }
+    .ghost-card:hover, .ghost-card.is-active { border-color: currentColor; background: rgba(25,25,166,.24); box-shadow: 0 0 22px currentColor; transform: translateY(-5px); }
+    .ghost-card.red { color: var(--red); }
+    .ghost-card.pink { color: var(--pink); }
+    .ghost-card.cyan { color: var(--cyan); }
+    .ghost-card.orange { color: var(--orange); }
+    .ghost-avatar { position: relative; width: 42px; height: 42px; margin-bottom: 17px; border-radius: 50% 50% 8px 8px; background: currentColor; filter: drop-shadow(0 0 7px currentColor); }
+    .ghost-avatar::before { position: absolute; right: 7px; bottom: -5px; left: 7px; height: 10px; content: ""; background: inherit; clip-path: polygon(0 0, 22% 100%, 50% 0, 78% 100%, 100% 0, 100% 100%, 0 100%); }
+    .ghost-avatar::after { position: absolute; top: 14px; left: 10px; content: "••"; color: var(--navy); font: 14px/8px Arial, sans-serif; letter-spacing: 5px; }
+    .ghost-card h3 { margin: 0 0 8px; color: currentColor; font: 14px "Press Start 2P", monospace; letter-spacing: -0.08em; }
+    .ghost-card p { margin: 0; color: var(--muted); font-size: 17px; line-height: 1; }
+    .ghost-card .ghost-meta { position: absolute; right: 12px; bottom: 12px; color: currentColor; font-size: 15px; opacity: 0.7; }
+    .ghost-readout { min-height: 52px; margin-top: 18px; padding: 14px 17px; border-left: 2px solid var(--yellow); color: var(--yellow); background: rgba(255,255,0,.06); font-size: 19px; line-height: 1; }
+
+    .score-list { display: grid; gap: 14px; margin-top: 30px; }
+    .score-row { display: grid; grid-template-columns: 28px 1fr auto; gap: 10px; align-items: center; padding-bottom: 13px; border-bottom: 1px dashed var(--line); color: var(--muted); }
+    .score-row span:first-child { color: var(--yellow); }
+    .score-row strong { color: var(--white); font-size: 22px; font-weight: 400; }
+    .score-row b { color: var(--cyan); font-size: 21px; font-weight: 400; }
+    .meter { height: 5px; margin-top: 26px; background: rgba(25,25,166,.35); }
+    .meter span { display: block; width: 92%; height: 100%; background: linear-gradient(to right, var(--yellow), var(--pink)); box-shadow: 0 0 12px var(--yellow); }
+    .milestone-list { display: grid; gap: 11px; margin-top: 30px; padding: 0; list-style: none; }
+    .milestone-list li { display: grid; grid-template-columns: 16px 1fr; gap: 10px; color: #c0bfdc; font-size: 19px; line-height: 1.05; }
+    .milestone-list li::before { width: 7px; height: 7px; margin-top: 6px; content: ""; border-radius: 50%; background: var(--pink); box-shadow: 0 0 9px var(--pink); }
+    .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 28px; }
+    .stat { padding: 13px 10px; border: 1px solid var(--line); text-align: center; }
+    .stat b { display: block; color: var(--yellow); font-size: 25px; font-weight: 400; }
+    .stat small { color: var(--muted); font-size: 14px; }
+
+    .cta-card { border-color: rgba(255,255,0,.5); background: linear-gradient(135deg, rgba(255,255,0,.07), rgba(5,4,44,.75) 48%); }
+    .cta-card .card-title { color: var(--yellow); }
+    .cta-buttons { display: flex; flex-wrap: wrap; gap: 11px; margin-top: 30px; }
+    .small-btn { min-width: 0; min-height: 42px; padding: 0 17px; font-size: 9px; }
+    .credits-card { min-height: 100%; }
+    .credit-line { display: flex; justify-content: space-between; gap: 20px; padding: 13px 0; border-bottom: 1px dashed var(--line); color: var(--muted); }
+    .credit-line strong { color: var(--white); font-weight: 400; }
+    .social-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 30px; }
+    .social-link { padding: 8px 11px; border: 1px solid var(--line); color: var(--cyan); font-size: 17px; transition: border 160ms ease, background 160ms ease, color 160ms ease; }
+    .social-link:hover { border-color: var(--cyan); color: var(--navy); background: var(--cyan); }
+    .footer-mark { margin-top: 80px; color: var(--muted); font-size: 15px; text-align: center; }
+    .footer-mark span { color: var(--yellow); }
+
+    .toast { position: fixed; z-index: 50; right: 22px; bottom: 22px; max-width: min(360px, calc(100vw - 44px)); padding: 13px 17px; border: 1px solid var(--yellow); color: var(--navy); background: var(--yellow); font-size: 18px; box-shadow: 0 0 24px rgba(255,255,0,.35); opacity: 0; pointer-events: none; transform: translateY(18px); transition: opacity 180ms ease, transform 180ms ease; }
+    .toast.is-visible { opacity: 1; transform: translateY(0); }
+
+    .game-modal { position: fixed; z-index: 40; inset: 0; display: grid; place-items: center; padding: 20px; background: rgba(3,0,28,.82); backdrop-filter: blur(14px); opacity: 0; pointer-events: none; transition: opacity 200ms ease; }
+    .game-modal.is-open { opacity: 1; pointer-events: auto; }
+    .game-panel { position: relative; width: min(480px, 100%); padding: 25px; border: 1px solid var(--yellow); background: var(--navy-2); box-shadow: 0 0 50px rgba(255,255,0,.25); }
+    .game-panel::before { position: absolute; inset: 6px; border: 1px solid var(--blue); content: ""; pointer-events: none; }
+    .game-head { position: relative; display: flex; justify-content: space-between; align-items: center; gap: 15px; margin-bottom: 18px; }
+    .game-head h2 { margin: 0; color: var(--yellow); font: 16px "Press Start 2P", monospace; }
+    .close-game { border: 0; color: var(--pink); background: transparent; cursor: pointer; font-size: 28px; line-height: 1; }
+    .game-status { position: relative; display: flex; justify-content: space-between; margin-bottom: 12px; color: var(--muted); font-size: 18px; }
+    .game-status strong { color: var(--yellow); font-weight: 400; }
+    #gameCanvas { position: relative; display: block; width: 100%; max-width: 360px; height: auto; margin: 0 auto; border: 1px solid var(--blue-bright); background: #000; image-rendering: pixelated; box-shadow: 0 0 22px rgba(25,25,166,.55); }
+    .game-help { position: relative; margin: 13px 0 0; color: var(--muted); font-size: 17px; text-align: center; }
+    .dpad { position: relative; display: grid; grid-template-columns: repeat(3, 42px); justify-content: center; gap: 4px; margin-top: 16px; }
+    .dpad button { width: 42px; height: 34px; border: 1px solid var(--blue-bright); color: var(--cyan); background: rgba(25,25,166,.2); cursor: pointer; }
+    .dpad button:hover { color: var(--navy); background: var(--cyan); }
+    .dpad button:nth-child(1) { grid-column: 2; }
+    .dpad button:nth-child(2) { grid-column: 1; grid-row: 2; }
+    .dpad button:nth-child(3) { grid-column: 2; grid-row: 2; }
+    .dpad button:nth-child(4) { grid-column: 3; grid-row: 2; }
+    .dpad button:nth-child(5) { grid-column: 2; grid-row: 3; }
+
+    @keyframes pacman-chomp { 0%, 100% { clip-path: polygon(50% 50%, 100% 7%, 100% 93%); } 50% { clip-path: polygon(50% 50%, 100% 42%, 100% 58%); } }
+    @keyframes pacman-aura { 50% { opacity: 0.48; transform: scale(1.08); } }
+    @keyframes power-pulse { 50% { opacity: 0.45; transform: translateX(-50%) scale(.7); } }
+    @keyframes drift-stars { to { background-position: 270px 220px, -340px 270px, 410px -310px; } }
+    @keyframes cue-float { 50% { transform: translateY(7px); opacity: .55; } }
+    @keyframes title-flicker { 0%, 18%, 20%, 55%, 57%, 100% { opacity: 1; } 19%, 56% { opacity: .86; } }
+
+    @media (max-width: 900px) {
+      .header-nav { display: none; }
+      .level-grid { gap: 42px; }
+      .track-layer { width: 132px; opacity: .95; }
+      .arcade-card { padding: 26px; }
+    }
+    @media (max-width: 640px) {
+      body { font-size: 18px; }
+      :root { --header-height: 62px; }
+      .site-header { padding: 0 14px; }
+      .brand { gap: 7px; font-size: 8px; }
+      .brand small { font-size: 6px; }
+      .brand-mark { width: 23px; height: 23px; font-size: 15px; }
+      .hud-score { display: none; }
+      .coin-btn { padding: 0 9px; font-size: 7px; }
+      .track-layer { width: 92px; opacity: .92; }
+      .track-label, .ghost-float { display: none; }
+      .hero { padding-right: 17px; padding-left: 17px; }
+      .eyebrow { font-size: 7px; }
+      .eyebrow::before, .eyebrow::after { width: 18px; }
+      h1 { font-size: clamp(27px, 10.5vw, 52px); letter-spacing: -0.12em; }
+      .hero-subtitle { font-size: 25px; }
+      .hero-readout { gap: 15px; margin-top: 45px; font-size: 16px; }
+      .hero-readout strong { font-size: 22px; }
+      .level-section { min-height: 0; padding: 96px 17px 110px; }
+      .level-intro { display: block; margin-bottom: 35px; }
+      .level-coords { margin-top: 16px; text-align: left; }
+      .level-grid { grid-template-columns: 1fr; gap: 24px; }
+      .arcade-card { padding: 22px 18px; }
+      .card-index { margin-bottom: 22px; font-size: 7px; }
+      .card-copy { font-size: 19px; }
+      .ghost-card-grid { gap: 8px; }
+      .ghost-card { min-height: 165px; padding: 15px 12px; }
+      .ghost-card h3 { font-size: 11px; }
+      .ghost-card p { font-size: 16px; }
+      .stat-grid { gap: 6px; }
+      .stat { padding: 10px 5px; }
+      .stat b { font-size: 21px; }
+      .social-row { gap: 5px; }
+      .footer-mark { margin-top: 42px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="scanlines" aria-hidden="true"></div>
+  <header class="site-header">
+    <a class="brand" href="#top" aria-label="Pac-Man Parallax home"><span class="brand-mark">◖</span><span>PAC-MAN <small>// PARALLAX</small></span></a>
+    <nav class="header-nav" aria-label="Main navigation">
+      <a href="#legend">01 / LEGEND</a>
+      <a href="#mechanics">02 / MECHANICS</a>
+      <a href="#contact">03 / CONTACT</a>
+    </nav>
+    <div class="header-actions">
+      <div class="hud-score"><span>1UP</span><strong id="scoreReadout">0000000</strong></div>
+      <button class="icon-btn" id="audioToggle" type="button" aria-pressed="false" aria-label="Toggle arcade sounds">♪</button>
+      <button class="coin-btn" id="coinButton" type="button">INSERT COIN</button>
+    </div>
+  </header>
+
+  <div class="track-layer" aria-hidden="true">
+    <div class="track-label">PLAYER 1</div>
+    <div class="track-rail"></div>
+    <div class="pellet-field" id="pelletField"></div>
+    <div class="pacman-runner" id="pacmanRunner"><div class="pacman-face"></div></div>
+    <div class="ghost-float red" data-ghost-speed="0.8"></div>
+    <div class="ghost-float pink" data-ghost-speed="-0.55"></div>
+    <div class="ghost-float cyan" data-ghost-speed="0.35"></div>
+    <div class="ghost-float orange" data-ghost-speed="-0.25"></div>
+  </div>
+
+  <main id="top">
+    <section class="hero">
+      <div class="hero-content">
+        <div class="eyebrow">READY PLAYER ONE // 1980 → NOW</div>
+        <h1>PAC-MAN<br />PARALLAX</h1>
+        <p class="hero-subtitle">Scroll down to <span>start the maze!</span></p>
+        <div class="hero-actions">
+          <a class="arcade-btn" href="#legend">START MAZE</a>
+          <button class="arcade-btn secondary" id="heroGameButton" type="button">PLAY MINI-GAME</button>
+        </div>
+        <div class="hero-readout" aria-label="Arcade statistics">
+          <div><strong>40+</strong><span>YEARS OF FUN</span></div>
+          <div><strong>256</strong><span>LEVELS IN A RUN</span></div>
+          <div><strong>1</strong><span>ICONIC HERO</span></div>
+        </div>
+      </div>
+      <div class="scroll-cue"><span>SCROLL TO NAVIGATE</span><i></i></div>
+    </section>
+
+    <section class="level-section" id="legend">
+      <div class="level-intro">
+        <div><span class="level-kicker">LEVEL 01 / THE LEGEND</span><h2 class="level-title">A MAZE ICON, <em>REWIRED.</em></h2></div>
+        <div class="level-coords"><b>SECTOR 01</b><br />THE GOLDEN AGE OF ARCADE</div>
+      </div>
+      <div class="level-grid">
+        <article class="arcade-card parallax-card" data-parallax="0.045">
+          <div class="card-index"><span>ARCHIVE // 001</span><b>1980</b></div>
+          <h3 class="card-title">ABOUT <span class="accent">PAC-MAN</span></h3>
+          <p class="card-copy">Born in a Tokyo arcade and known around the world, Pac-Man turned a yellow circle into a cultural superpower. No lasers. No spaceships. Just one hungry hero, four personalities, and a maze that keeps you moving.</p>
+          <p class="quote-line">“The game is never over until the last dot is gone.”</p>
+          <div class="timeline">
+            <div class="timeline-row"><span class="timeline-year">1980</span><p>Arcade debut as Puck Man — a new kind of hero arrives.</p></div>
+            <div class="timeline-row"><span class="timeline-year">1982</span><p>The pixel icon lands in pop culture, merch, music, and cartoons.</p></div>
+            <div class="timeline-row"><span class="timeline-year">NOW</span><p>The maze keeps evolving, but the chase stays timeless.</p></div>
+          </div>
+          <div class="card-footer"><span>STATUS: <b>LEGENDARY</b></span><span>● ● ● ● ●</span></div>
+        </article>
+
+        <article class="arcade-card parallax-card" data-parallax="-0.065">
+          <div class="card-index"><span>DATABASE // 004</span><b>ENEMIES</b></div>
+          <h3 class="card-title">THE GHOST <span class="accent">GANG</span></h3>
+          <div class="ghost-card-grid">
+            <button class="ghost-card red is-active" data-ghost="blinky" type="button"><span class="ghost-avatar"></span><h3>BLINKY</h3><p>Shadow chaser.<br />Always closing in.</p><span class="ghost-meta">#FF0000</span></button>
+            <button class="ghost-card pink" data-ghost="pinky" type="button"><span class="ghost-avatar"></span><h3>PINKY</h3><p>Ambush expert.<br />Thinks ahead.</p><span class="ghost-meta">#FFB8FF</span></button>
+            <button class="ghost-card cyan" data-ghost="inky" type="button"><span class="ghost-avatar"></span><h3>INKY</h3><p>Wildcard mode.<br />Hard to predict.</p><span class="ghost-meta">#00FFFF</span></button>
+            <button class="ghost-card orange" data-ghost="clyde" type="button"><span class="ghost-avatar"></span><h3>CLYDE</h3><p>Scatter specialist.<br />A little chaotic.</p><span class="ghost-meta">#FFB852</span></button>
+          </div>
+          <div class="ghost-readout" id="ghostReadout">BLINKY // “I don’t chase the player. I chase the next turn.”</div>
+        </article>
+      </div>
+    </section>
+
+    <section class="level-section" id="mechanics">
+      <div class="level-intro">
+        <div><span class="level-kicker">LEVEL 02 / GAME MECHANICS</span><h2 class="level-title">EAT DOTS. <em>BEAT ODDS.</em></h2></div>
+        <div class="level-coords"><b>SECTOR 02</b><br />SCORE MULTIPLIER ONLINE</div>
+      </div>
+      <div class="level-grid">
+        <article class="arcade-card parallax-card" data-parallax="-0.055">
+          <div class="card-index"><span>SCORING // 100</span><b>POWER UP</b></div>
+          <h3 class="card-title">POWER PELLETS<br /><span class="accent">&amp; SCORING</span></h3>
+          <p class="card-copy">Every corner is a decision. Clear the board, take the risk, and build a combo before the ghosts remember which way you went.</p>
+          <div class="score-list">
+            <div class="score-row"><span>01</span><strong>Pac-Dot</strong><b>10 pts</b></div>
+            <div class="score-row"><span>02</span><strong>Power Pellet</strong><b>50 pts</b></div>
+            <div class="score-row"><span>03</span><strong>Ghost Chain</strong><b>200 → 3,000</b></div>
+            <div class="score-row"><span>04</span><strong>Fruit Bonus</strong><b>10,000 pts</b></div>
+          </div>
+          <div class="meter" aria-label="Combo meter"><span></span></div>
+          <div class="card-footer"><span>COMBO METER</span><b>MAXIMUM</b></div>
+        </article>
+
+        <article class="arcade-card parallax-card" data-parallax="0.08">
+          <div class="card-index"><span>HALL OF FAME // 3333360</span><b>TOP SCORE</b></div>
+          <h3 class="card-title">HIGH SCORES<br /><span class="accent">&amp; MILESTONES</span></h3>
+          <p class="card-copy">The perfect game: <strong>3,333,360 points</strong>. Every dot, every fruit, every ghost — cleared across all 256 levels before the infamous kill screen.</p>
+          <ul class="milestone-list">
+            <li>Reach the split-screen at level 256.</li>
+            <li>Master the ghost personalities, not just their colors.</li>
+            <li>Use the tunnels — a shortcut is still a strategy.</li>
+            <li>Never underestimate the last four dots.</li>
+          </ul>
+          <div class="stat-grid">
+            <div class="stat"><b>256</b><small>MAX LEVEL</small></div>
+            <div class="stat"><b>4</b><small>GHOSTS</small></div>
+            <div class="stat"><b>1</b><small>PERFECT RUN</small></div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="level-section" id="contact">
+      <div class="level-intro">
+        <div><span class="level-kicker">LEVEL 03 / GAME OVER // NOT REALLY</span><h2 class="level-title">YOUR TURN, <em>PLAYER.</em></h2></div>
+        <div class="level-coords"><b>SECTOR 03</b><br />INSERT COIN TO CONTINUE</div>
+      </div>
+      <div class="level-grid">
+        <article class="arcade-card cta-card parallax-card" data-parallax="0.07">
+          <div class="card-index"><span>PLAYER SELECT</span><b>READY?</b></div>
+          <h3 class="card-title">PRESS <span class="accent">START</span></h3>
+          <p class="card-copy">The maze is waiting. Bring your best route, your fastest reflexes, and exactly zero fear of the dark.</p>
+          <div class="cta-buttons"><button class="arcade-btn small-btn" id="startGameButton" type="button">START GAME</button><a class="arcade-btn secondary small-btn" href="#top">REPLAY PAGE</a></div>
+          <div class="card-footer"><span>CHANCES: <b>∞</b></span><span>INSERT COIN →</span></div>
+        </article>
+        <article class="arcade-card credits-card parallax-card" data-parallax="-0.04">
+          <div class="card-index"><span>PLAYER 1 // ONLINE</span><b>CREDITS 01</b></div>
+          <h3 class="card-title">INSERT COIN<br /><span class="accent">/ CREDITS</span></h3>
+          <div class="credit-line"><span>MAZE STATUS</span><strong>OPEN 24/7</strong></div>
+          <div class="credit-line"><span>LOCAL HIGH SCORE</span><strong id="localScore">0000000</strong></div>
+          <div class="credit-line"><span>ACTIVE PLAYERS</span><strong>04,280</strong></div>
+          <div class="social-row" aria-label="Social links">
+            <a class="social-link" href="https://github.com/" target="_blank" rel="noreferrer">GITHUB ↗</a>
+            <a class="social-link" href="https://x.com/" target="_blank" rel="noreferrer">X / TWITTER ↗</a>
+            <a class="social-link" href="#legend">ARCHIVE ↗</a>
+          </div>
+          <div class="card-footer"><span>BUILT WITH <b>♥</b> &amp; PIXELS</span><span>© 1980 / 2025</span></div>
+        </article>
+      </div>
+      <p class="footer-mark"><span>●</span> PAC-MAN PARALLAX <span>●</span> A SCROLLABLE LOVE LETTER TO THE MAZE <span>●</span></p>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <div class="game-modal" id="gameModal" aria-hidden="true">
+    <div class="game-panel" role="dialog" aria-modal="true" aria-labelledby="gameTitle">
+      <div class="game-head"><h2 id="gameTitle">MINI MAZE // 01</h2><button class="close-game" id="closeGame" type="button" aria-label="Close mini-game">×</button></div>
+      <div class="game-status"><span>SCORE <strong id="gameScore">0000</strong></span><span>DOTS <strong id="gameDots">00</strong></span></div>
+      <canvas id="gameCanvas" width="342" height="378" tabindex="0" aria-label="Mini Pac-Man maze. Use arrow keys or WASD to move."></canvas>
+      <p class="game-help">ARROW KEYS / WASD TO MOVE · EAT THE DOTS</p>
+      <div class="dpad" aria-label="Touch controls">
+        <button type="button" data-dir="up" aria-label="Move up">▲</button>
+        <button type="button" data-dir="left" aria-label="Move left">◀</button>
+        <button type="button" data-dir="stop" aria-label="Stop">·</button>
+        <button type="button" data-dir="right" aria-label="Move right">▶</button>
+        <button type="button" data-dir="down" aria-label="Move down">▼</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const root = document.documentElement;
+      const body = document.body;
+      const $ = (selector, parent = document) => parent.querySelector(selector);
+      const $$ = (selector, parent = document) => [...parent.querySelectorAll(selector)];
+      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      const scoreReadout = $("#scoreReadout");
+      const localScore = $("#localScore");
+      const runner = $("#pacmanRunner");
+      const pelletField = $("#pelletField");
+      const trackGhosts = $$(".ghost-float");
+      const parallaxCards = $$(".parallax-card");
+      const pellets = [];
+      let lastProgress = -1;
+
+      for (let i = 0; i < 23; i += 1) {
+        const pellet = document.createElement("span");
+        pellet.className = `pellet${i % 6 === 0 ? " power" : ""}`;
+        pellet.style.top = `${8 + (i / 22) * 84}%`;
+        pellet.dataset.depth = String(i / 22);
+        pelletField.appendChild(pellet);
+        pellets.push(pellet);
+      }
+
+      function padScore(value, length = 7) {
+        return String(Math.max(0, Math.floor(value))).padStart(length, "0");
+      }
+
+      function onScroll() {
+        const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+        const progress = Math.min(1, Math.max(0, window.scrollY / maxScroll));
+        root.style.setProperty("--progress", progress.toFixed(4));
+        runner.style.top = `${8 + progress * 84}%`;
+        const score = progress > 0.98 ? 3333360 : progress * 850000;
+        scoreReadout.textContent = padScore(score);
+        localScore.textContent = padScore(score);
+
+        pellets.forEach((pellet) => {
+          pellet.classList.toggle("eaten", Number(pellet.dataset.depth) < progress - 0.015);
+        });
+
+        if (!reducedMotion) {
+          parallaxCards.forEach((card) => {
+            const rect = card.getBoundingClientRect();
+            const speed = Number(card.dataset.parallax || 0);
+            const distance = (window.innerHeight * 0.5 - (rect.top + rect.height * 0.5)) * speed;
+            card.style.setProperty("--parallax-y", `${distance.toFixed(1)}px`);
+          });
+          trackGhosts.forEach((ghost) => {
+            const speed = Number(ghost.dataset.ghostSpeed || 0);
+            ghost.style.transform = `translateY(${(window.scrollY * speed * 0.11).toFixed(1)}px)`;
+          });
+        }
+
+        if (lastProgress >= 0 && progress - lastProgress > 0.025 && audioOn) playTone(260 + progress * 260, 0.035);
+        lastProgress = progress;
+      }
+
+      let scrollTick = false;
+      window.addEventListener("scroll", () => {
+        if (!scrollTick) {
+          window.requestAnimationFrame(() => { onScroll(); scrollTick = false; });
+          scrollTick = true;
+        }
+      }, { passive: true });
+      window.addEventListener("resize", onScroll, { passive: true });
+      onScroll();
+
+      const ghostQuotes = {
+        blinky: "BLINKY // “I don’t chase the player. I chase the next turn.”",
+        pinky: "PINKY // “The best ambush is the one they never see coming.”",
+        inky: "INKY // “Give me a corner and I’ll give you a surprise.”",
+        clyde: "CLYDE // “Sometimes the smartest move is wandering off.”"
+      };
+      $$(".ghost-card").forEach((card) => {
+        card.addEventListener("click", () => {
+          $$(".ghost-card").forEach((item) => item.classList.remove("is-active"));
+          card.classList.add("is-active");
+          $("#ghostReadout").textContent = ghostQuotes[card.dataset.ghost];
+          if (audioOn) playTone(420, 0.07);
+        });
+      });
+
+      let audioOn = false;
+      let audioContext;
+      function playTone(frequency = 440, duration = 0.08) {
+        if (!audioOn) return;
+        audioContext ||= new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        oscillator.type = "square";
+        oscillator.frequency.value = frequency;
+        gain.gain.setValueAtTime(0.035, audioContext.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
+        oscillator.connect(gain).connect(audioContext.destination);
+        oscillator.start();
+        oscillator.stop(audioContext.currentTime + duration);
+      }
+      const audioToggle = $("#audioToggle");
+      audioToggle.addEventListener("click", () => {
+        audioOn = !audioOn;
+        audioToggle.classList.toggle("is-on", audioOn);
+        audioToggle.setAttribute("aria-pressed", String(audioOn));
+        audioToggle.textContent = audioOn ? "♫" : "♪";
+        showToast(audioOn ? "ARCADE AUDIO: ON" : "ARCADE AUDIO: MUTED");
+        if (audioOn) playTone(520, 0.09);
+      });
+
+      let toastTimer;
+      function showToast(message) {
+        const toast = $("#toast");
+        toast.textContent = message;
+        toast.classList.add("is-visible");
+        window.clearTimeout(toastTimer);
+        toastTimer = window.setTimeout(() => toast.classList.remove("is-visible"), 2300);
+      }
+
+      $("#coinButton").addEventListener("click", () => {
+        playTone(330, 0.06);
+        showToast("CREDIT ADDED // PLAYER 1 READY");
+        $("#startGameButton").focus({ preventScroll: true });
+      });
+
+      // A compact, keyboard-and-touch playable mini maze.
+      const canvas = $("#gameCanvas");
+      const ctx = canvas.getContext("2d");
+      const cell = 18;
+      const cols = 19;
+      const rows = 21;
+      const wallCells = new Set();
+      const addH = (y, from, to) => { for (let x = from; x <= to; x += 1) wallCells.add(`${x},${y}`); };
+      const addV = (x, from, to) => { for (let y = from; y <= to; y += 1) wallCells.add(`${x},${y}`); };
+      addH(0, 0, 18); addH(20, 0, 18); addV(0, 0, 20); addV(18, 0, 20);
+      addH(3, 2, 6); addH(3, 12, 16); addH(6, 1, 4); addH(6, 7, 11); addH(6, 14, 17);
+      addH(9, 2, 6); addH(9, 12, 16); addH(14, 1, 4); addH(14, 7, 11); addH(14, 14, 17);
+      addH(17, 2, 6); addH(17, 12, 16);
+      addV(4, 4, 8); addV(4, 11, 13); addV(14, 4, 8); addV(14, 11, 13);
+      addV(8, 1, 3); addV(8, 6, 9); addV(8, 11, 14); addV(8, 17, 19);
+      addV(10, 1, 3); addV(10, 6, 9); addV(10, 11, 14); addV(10, 17, 19);
+      const startPosition = { x: 1, y: 1 };
+      let player = { ...startPosition };
+      let direction = { x: 0, y: 0 };
+      let gameDots = new Set();
+      let gameScore = 0;
+      let ghostPositions = [{ x: 17, y: 1 }, { x: 17, y: 19 }];
+      let gameOpen = false;
+      let ghostTimer;
+
+      function isWall(x, y) { return wallCells.has(`${x},${y}`); }
+      function resetGame() {
+        player = { ...startPosition };
+        direction = { x: 0, y: 0 };
+        gameScore = 0;
+        ghostPositions = [{ x: 17, y: 1 }, { x: 17, y: 19 }];
+        gameDots = new Set();
+        for (let y = 1; y < rows - 1; y += 1) {
+          for (let x = 1; x < cols - 1; x += 1) if (!isWall(x, y)) gameDots.add(`${x},${y}`);
+        }
+        gameDots.delete(`${player.x},${player.y}`);
+        drawGame();
+        updateGameStatus();
+      }
+      function updateGameStatus() {
+        $("#gameScore").textContent = padScore(gameScore, 4);
+        $("#gameDots").textContent = String(gameDots.size).padStart(2, "0");
+      }
+      function movePlayer(nextDirection) {
+        direction = nextDirection;
+        const next = { x: player.x + direction.x, y: player.y + direction.y };
+        if (!isWall(next.x, next.y)) {
+          player = next;
+          const key = `${player.x},${player.y}`;
+          if (gameDots.delete(key)) { gameScore += 10; playTone(430 + gameScore, 0.035); }
+          if (gameDots.size === 0) { showToast("MAZE CLEAR // PERFECT ROUTE"); resetGame(); }
+          updateGameStatus();
+        }
+        drawGame();
+      }
+      function nudgeGhosts() {
+        ghostPositions = ghostPositions.map((ghost) => {
+          const options = [{x: 1, y: 0}, {x: -1, y: 0}, {x: 0, y: 1}, {x: 0, y: -1}]
+            .map((move) => ({ x: ghost.x + move.x, y: ghost.y + move.y }))
+            .filter((next) => !isWall(next.x, next.y));
+          return options[Math.floor(Math.random() * options.length)] || ghost;
+        });
+        drawGame();
+      }
+      function drawGame() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#000";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        wallCells.forEach((key) => {
+          const [x, y] = key.split(",").map(Number);
+          ctx.fillStyle = "#1919a6";
+          ctx.fillRect(x * cell + 2, y * cell + 2, cell - 4, cell - 4);
+          ctx.strokeStyle = "#3434ff";
+          ctx.strokeRect(x * cell + 3, y * cell + 3, cell - 6, cell - 6);
+        });
+        ctx.fillStyle = "#ffff00";
+        gameDots.forEach((key) => {
+          const [x, y] = key.split(",").map(Number);
+          ctx.beginPath(); ctx.arc(x * cell + cell / 2, y * cell + cell / 2, 2, 0, Math.PI * 2); ctx.fill();
+        });
+        ghostPositions.forEach((ghost, index) => {
+          ctx.fillStyle = index ? "#ffb8ff" : "#ff0000";
+          ctx.beginPath(); ctx.arc(ghost.x * cell + cell / 2, ghost.y * cell + cell / 2, 7, Math.PI, 0); ctx.lineTo(ghost.x * cell + cell - 3, ghost.y * cell + cell - 4); ctx.lineTo(ghost.x * cell + 3, ghost.y * cell + cell - 4); ctx.closePath(); ctx.fill();
+          ctx.fillStyle = "#03001c"; ctx.fillRect(ghost.x * cell + 6, ghost.y * cell + 7, 2, 2); ctx.fillRect(ghost.x * cell + 11, ghost.y * cell + 7, 2, 2);
+        });
+        const centerX = player.x * cell + cell / 2;
+        const centerY = player.y * cell + cell / 2;
+        ctx.fillStyle = "#ffff00";
+        ctx.beginPath(); ctx.moveTo(centerX, centerY); ctx.arc(centerX, centerY, 7, 0.27, Math.PI * 2 - 0.27); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = "#03001c"; ctx.beginPath(); ctx.arc(centerX + 2, centerY - 4, 1.5, 0, Math.PI * 2); ctx.fill();
+      }
+
+      const gameModal = $("#gameModal");
+      function openGame() {
+        gameOpen = true;
+        gameModal.classList.add("is-open");
+        gameModal.setAttribute("aria-hidden", "false");
+        resetGame();
+        window.clearInterval(ghostTimer);
+        ghostTimer = window.setInterval(nudgeGhosts, 900);
+        canvas.focus({ preventScroll: true });
+        playTone(520, 0.08);
+      }
+      function closeGame() {
+        gameOpen = false;
+        gameModal.classList.remove("is-open");
+        gameModal.setAttribute("aria-hidden", "true");
+        window.clearInterval(ghostTimer);
+      }
+      $("#startGameButton").addEventListener("click", openGame);
+      $("#heroGameButton").addEventListener("click", openGame);
+      $("#closeGame").addEventListener("click", closeGame);
+      gameModal.addEventListener("click", (event) => { if (event.target === gameModal) closeGame(); });
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && gameOpen) closeGame();
+        if (!gameOpen) return;
+        const moves = { ArrowUp: {x: 0, y: -1}, w: {x: 0, y: -1}, ArrowDown: {x: 0, y: 1}, s: {x: 0, y: 1}, ArrowLeft: {x: -1, y: 0}, a: {x: -1, y: 0}, ArrowRight: {x: 1, y: 0}, d: {x: 1, y: 0} };
+        if (moves[event.key]) { event.preventDefault(); movePlayer(moves[event.key]); }
+      });
+      $$(".dpad button").forEach((button) => button.addEventListener("click", () => {
+        const moves = { up: {x: 0, y: -1}, down: {x: 0, y: 1}, left: {x: -1, y: 0}, right: {x: 1, y: 0}, stop: {x: 0, y: 0} };
+        movePlayer(moves[button.dataset.dir]);
+      }));
+    })();
+  </script>
+</body>
+</html>
