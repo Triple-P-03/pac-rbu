@@ -535,26 +535,6 @@
     .toast { position: fixed; z-index: 50; right: 22px; bottom: 22px; max-width: min(360px, calc(100vw - 44px)); padding: 13px 17px; border: 1px solid var(--yellow); color: var(--navy); background: var(--yellow); font-size: 18px; box-shadow: 0 0 24px rgba(255,255,0,.35); opacity: 0; pointer-events: none; transform: translateY(18px); transition: opacity 180ms ease, transform 180ms ease; }
     .toast.is-visible { opacity: 1; transform: translateY(0); }
 
-    .game-modal { position: fixed; z-index: 40; inset: 0; display: grid; place-items: center; padding: 20px; background: rgba(3,0,28,.82); backdrop-filter: blur(14px); opacity: 0; pointer-events: none; transition: opacity 200ms ease; }
-    .game-modal.is-open { opacity: 1; pointer-events: auto; }
-    .game-panel { position: relative; width: min(480px, 100%); padding: 25px; border: 1px solid var(--yellow); background: var(--navy-2); box-shadow: 0 0 50px rgba(255,255,0,.25); }
-    .game-panel::before { position: absolute; inset: 6px; border: 1px solid var(--blue); content: ""; pointer-events: none; }
-    .game-head { position: relative; display: flex; justify-content: space-between; align-items: center; gap: 15px; margin-bottom: 18px; }
-    .game-head h2 { margin: 0; color: var(--yellow); font: 16px "Press Start 2P", monospace; }
-    .close-game { border: 0; color: var(--pink); background: transparent; cursor: pointer; font-size: 28px; line-height: 1; }
-    .game-status { position: relative; display: flex; justify-content: space-between; margin-bottom: 12px; color: var(--muted); font-size: 18px; }
-    .game-status strong { color: var(--yellow); font-weight: 400; }
-    #gameCanvas { position: relative; display: block; width: 100%; max-width: 360px; height: auto; margin: 0 auto; border: 1px solid var(--blue-bright); background: #000; image-rendering: pixelated; box-shadow: 0 0 22px rgba(25,25,166,.55); }
-    .game-help { position: relative; margin: 13px 0 0; color: var(--muted); font-size: 17px; text-align: center; }
-    .dpad { position: relative; display: grid; grid-template-columns: repeat(3, 42px); justify-content: center; gap: 4px; margin-top: 16px; }
-    .dpad button { width: 42px; height: 34px; border: 1px solid var(--blue-bright); color: var(--cyan); background: rgba(25,25,166,.2); cursor: pointer; }
-    .dpad button:hover { color: var(--navy); background: var(--cyan); }
-    .dpad button:nth-child(1) { grid-column: 2; }
-    .dpad button:nth-child(2) { grid-column: 1; grid-row: 2; }
-    .dpad button:nth-child(3) { grid-column: 2; grid-row: 2; }
-    .dpad button:nth-child(4) { grid-column: 3; grid-row: 2; }
-    .dpad button:nth-child(5) { grid-column: 2; grid-row: 3; }
-
     @keyframes pacman-chomp { 0%, 100% { clip-path: polygon(50% 50%, 100% 7%, 100% 93%); } 50% { clip-path: polygon(50% 50%, 100% 42%, 100% 58%); } }
     @keyframes pacman-aura { 50% { opacity: 0.48; transform: scale(1.08); } }
     @keyframes power-pulse { 50% { opacity: 0.45; transform: translateX(-50%) scale(.7); } }
@@ -620,7 +600,7 @@
     <div class="header-actions">
       <div class="hud-score"><span>1UP</span><strong id="scoreReadout">0000000</strong></div>
       <button class="icon-btn" id="audioToggle" type="button" aria-pressed="false" aria-label="Toggle arcade sounds">♪</button>
-      <button class="coin-btn" id="coinButton" type="button">INSERT COIN</button>
+      <a class="coin-btn" id="coinButton" href="https://pixel-chase-three.vercel.app/" target="_blank" rel="noopener noreferrer">INSERT COIN</a>
     </div>
   </header>
 
@@ -643,7 +623,7 @@
         <p class="hero-subtitle">Scroll down to <span>start the maze!</span></p>
         <div class="hero-actions">
           <a class="arcade-btn" href="#legend">START MAZE</a>
-          <button class="arcade-btn secondary" id="heroGameButton" type="button">PLAY MINI-GAME</button>
+          <a class="arcade-btn secondary" id="heroGameButton" href="https://pixel-chase-three.vercel.app/" target="_blank" rel="noopener noreferrer">PLAY PIXEL CHASE</a>
         </div>
         <div class="hero-readout" aria-label="Arcade statistics">
           <div><strong>40+</strong><span>YEARS OF FUN</span></div>
@@ -736,7 +716,7 @@
           <div class="card-index"><span>PLAYER SELECT</span><b>READY?</b></div>
           <h3 class="card-title">PRESS <span class="accent">START</span></h3>
           <p class="card-copy">The maze is waiting. Bring your best route, your fastest reflexes, and exactly zero fear of the dark.</p>
-          <div class="cta-buttons"><button class="arcade-btn small-btn" id="startGameButton" type="button">START GAME</button><a class="arcade-btn secondary small-btn" href="#top">REPLAY PAGE</a></div>
+          <div class="cta-buttons"><a class="arcade-btn small-btn" id="startGameButton" href="https://pixel-chase-three.vercel.app/" target="_blank" rel="noopener noreferrer">PLAY PIXEL CHASE</a><a class="arcade-btn secondary small-btn" href="#top">REPLAY PAGE</a></div>
           <div class="card-footer"><span>CHANCES: <b>∞</b></span><span>INSERT COIN →</span></div>
         </article>
         <article class="arcade-card credits-card parallax-card" data-parallax="-0.04">
@@ -758,22 +738,6 @@
   </main>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-
-  <div class="game-modal" id="gameModal" aria-hidden="true">
-    <div class="game-panel" role="dialog" aria-modal="true" aria-labelledby="gameTitle">
-      <div class="game-head"><h2 id="gameTitle">MINI MAZE // 01</h2><button class="close-game" id="closeGame" type="button" aria-label="Close mini-game">×</button></div>
-      <div class="game-status"><span>SCORE <strong id="gameScore">0000</strong></span><span>DOTS <strong id="gameDots">00</strong></span></div>
-      <canvas id="gameCanvas" width="342" height="378" tabindex="0" aria-label="Mini Pac-Man maze. Use arrow keys or WASD to move."></canvas>
-      <p class="game-help">ARROW KEYS / WASD TO MOVE · EAT THE DOTS</p>
-      <div class="dpad" aria-label="Touch controls">
-        <button type="button" data-dir="up" aria-label="Move up">▲</button>
-        <button type="button" data-dir="left" aria-label="Move left">◀</button>
-        <button type="button" data-dir="stop" aria-label="Stop">·</button>
-        <button type="button" data-dir="right" aria-label="Move right">▶</button>
-        <button type="button" data-dir="down" aria-label="Move down">▼</button>
-      </div>
-    </div>
-  </div>
 
   <script>
     (() => {
@@ -896,135 +860,6 @@
         toastTimer = window.setTimeout(() => toast.classList.remove("is-visible"), 2300);
       }
 
-      $("#coinButton").addEventListener("click", () => {
-        playTone(330, 0.06);
-        showToast("CREDIT ADDED // PLAYER 1 READY");
-        $("#startGameButton").focus({ preventScroll: true });
-      });
-
-      // A compact, keyboard-and-touch playable mini maze.
-      const canvas = $("#gameCanvas");
-      const ctx = canvas.getContext("2d");
-      const cell = 18;
-      const cols = 19;
-      const rows = 21;
-      const wallCells = new Set();
-      const addH = (y, from, to) => { for (let x = from; x <= to; x += 1) wallCells.add(`${x},${y}`); };
-      const addV = (x, from, to) => { for (let y = from; y <= to; y += 1) wallCells.add(`${x},${y}`); };
-      addH(0, 0, 18); addH(20, 0, 18); addV(0, 0, 20); addV(18, 0, 20);
-      addH(3, 2, 6); addH(3, 12, 16); addH(6, 1, 4); addH(6, 7, 11); addH(6, 14, 17);
-      addH(9, 2, 6); addH(9, 12, 16); addH(14, 1, 4); addH(14, 7, 11); addH(14, 14, 17);
-      addH(17, 2, 6); addH(17, 12, 16);
-      addV(4, 4, 8); addV(4, 11, 13); addV(14, 4, 8); addV(14, 11, 13);
-      addV(8, 1, 3); addV(8, 6, 9); addV(8, 11, 14); addV(8, 17, 19);
-      addV(10, 1, 3); addV(10, 6, 9); addV(10, 11, 14); addV(10, 17, 19);
-      const startPosition = { x: 1, y: 1 };
-      let player = { ...startPosition };
-      let direction = { x: 0, y: 0 };
-      let gameDots = new Set();
-      let gameScore = 0;
-      let ghostPositions = [{ x: 17, y: 1 }, { x: 17, y: 19 }];
-      let gameOpen = false;
-      let ghostTimer;
-
-      function isWall(x, y) { return wallCells.has(`${x},${y}`); }
-      function resetGame() {
-        player = { ...startPosition };
-        direction = { x: 0, y: 0 };
-        gameScore = 0;
-        ghostPositions = [{ x: 17, y: 1 }, { x: 17, y: 19 }];
-        gameDots = new Set();
-        for (let y = 1; y < rows - 1; y += 1) {
-          for (let x = 1; x < cols - 1; x += 1) if (!isWall(x, y)) gameDots.add(`${x},${y}`);
-        }
-        gameDots.delete(`${player.x},${player.y}`);
-        drawGame();
-        updateGameStatus();
-      }
-      function updateGameStatus() {
-        $("#gameScore").textContent = padScore(gameScore, 4);
-        $("#gameDots").textContent = String(gameDots.size).padStart(2, "0");
-      }
-      function movePlayer(nextDirection) {
-        direction = nextDirection;
-        const next = { x: player.x + direction.x, y: player.y + direction.y };
-        if (!isWall(next.x, next.y)) {
-          player = next;
-          const key = `${player.x},${player.y}`;
-          if (gameDots.delete(key)) { gameScore += 10; playTone(430 + gameScore, 0.035); }
-          if (gameDots.size === 0) { showToast("MAZE CLEAR // PERFECT ROUTE"); resetGame(); }
-          updateGameStatus();
-        }
-        drawGame();
-      }
-      function nudgeGhosts() {
-        ghostPositions = ghostPositions.map((ghost) => {
-          const options = [{x: 1, y: 0}, {x: -1, y: 0}, {x: 0, y: 1}, {x: 0, y: -1}]
-            .map((move) => ({ x: ghost.x + move.x, y: ghost.y + move.y }))
-            .filter((next) => !isWall(next.x, next.y));
-          return options[Math.floor(Math.random() * options.length)] || ghost;
-        });
-        drawGame();
-      }
-      function drawGame() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = "#000";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        wallCells.forEach((key) => {
-          const [x, y] = key.split(",").map(Number);
-          ctx.fillStyle = "#1919a6";
-          ctx.fillRect(x * cell + 2, y * cell + 2, cell - 4, cell - 4);
-          ctx.strokeStyle = "#3434ff";
-          ctx.strokeRect(x * cell + 3, y * cell + 3, cell - 6, cell - 6);
-        });
-        ctx.fillStyle = "#ffff00";
-        gameDots.forEach((key) => {
-          const [x, y] = key.split(",").map(Number);
-          ctx.beginPath(); ctx.arc(x * cell + cell / 2, y * cell + cell / 2, 2, 0, Math.PI * 2); ctx.fill();
-        });
-        ghostPositions.forEach((ghost, index) => {
-          ctx.fillStyle = index ? "#ffb8ff" : "#ff0000";
-          ctx.beginPath(); ctx.arc(ghost.x * cell + cell / 2, ghost.y * cell + cell / 2, 7, Math.PI, 0); ctx.lineTo(ghost.x * cell + cell - 3, ghost.y * cell + cell - 4); ctx.lineTo(ghost.x * cell + 3, ghost.y * cell + cell - 4); ctx.closePath(); ctx.fill();
-          ctx.fillStyle = "#03001c"; ctx.fillRect(ghost.x * cell + 6, ghost.y * cell + 7, 2, 2); ctx.fillRect(ghost.x * cell + 11, ghost.y * cell + 7, 2, 2);
-        });
-        const centerX = player.x * cell + cell / 2;
-        const centerY = player.y * cell + cell / 2;
-        ctx.fillStyle = "#ffff00";
-        ctx.beginPath(); ctx.moveTo(centerX, centerY); ctx.arc(centerX, centerY, 7, 0.27, Math.PI * 2 - 0.27); ctx.closePath(); ctx.fill();
-        ctx.fillStyle = "#03001c"; ctx.beginPath(); ctx.arc(centerX + 2, centerY - 4, 1.5, 0, Math.PI * 2); ctx.fill();
-      }
-
-      const gameModal = $("#gameModal");
-      function openGame() {
-        gameOpen = true;
-        gameModal.classList.add("is-open");
-        gameModal.setAttribute("aria-hidden", "false");
-        resetGame();
-        window.clearInterval(ghostTimer);
-        ghostTimer = window.setInterval(nudgeGhosts, 900);
-        canvas.focus({ preventScroll: true });
-        playTone(520, 0.08);
-      }
-      function closeGame() {
-        gameOpen = false;
-        gameModal.classList.remove("is-open");
-        gameModal.setAttribute("aria-hidden", "true");
-        window.clearInterval(ghostTimer);
-      }
-      $("#startGameButton").addEventListener("click", openGame);
-      $("#heroGameButton").addEventListener("click", openGame);
-      $("#closeGame").addEventListener("click", closeGame);
-      gameModal.addEventListener("click", (event) => { if (event.target === gameModal) closeGame(); });
-      document.addEventListener("keydown", (event) => {
-        if (event.key === "Escape" && gameOpen) closeGame();
-        if (!gameOpen) return;
-        const moves = { ArrowUp: {x: 0, y: -1}, w: {x: 0, y: -1}, ArrowDown: {x: 0, y: 1}, s: {x: 0, y: 1}, ArrowLeft: {x: -1, y: 0}, a: {x: -1, y: 0}, ArrowRight: {x: 1, y: 0}, d: {x: 1, y: 0} };
-        if (moves[event.key]) { event.preventDefault(); movePlayer(moves[event.key]); }
-      });
-      $$(".dpad button").forEach((button) => button.addEventListener("click", () => {
-        const moves = { up: {x: 0, y: -1}, down: {x: 0, y: 1}, left: {x: -1, y: 0}, right: {x: 1, y: 0}, stop: {x: 0, y: 0} };
-        movePlayer(moves[button.dataset.dir]);
-      }));
     })();
   </script>
 </body>
